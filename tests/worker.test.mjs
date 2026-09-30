@@ -103,6 +103,16 @@ test("selfie page discloses the Telegram destination before camera controls", as
   assert.match(js, /sendButton\.addEventListener\("click"/);
 });
 
+test("Wrangler config targets the provisioned free D1 and deployed Worker origin", async () => {
+  const config = await readFile(new URL("../wrangler.jsonc", import.meta.url), "utf8");
+  assert.match(config, /"database_name":\s*"telegram-selfie-links"/);
+  assert.match(config, /"database_id":\s*"bb259004-f586-4cc3-a188-6eba58b7886d"/);
+  assert.match(
+    config,
+    /"PUBLIC_BASE_URL":\s*"https:\/\/telegram-selfie-page\.millo-lawa\.workers\.dev"/,
+  );
+});
+
 test("bot only accepts start/newlink from the configured admin in a private chat", () => {
   assert.equal(parseBotCommand(adminUpdate(), "12345"), "newlink");
   assert.equal(parseBotCommand(adminUpdate(7, "/start@selfiebot"), "12345"), "newlink");

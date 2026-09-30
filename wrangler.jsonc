@@ -1,25 +1,25 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "telegram-selfie-page",
-  "main": "worker.mjs",
-  "compatibility_date": "2025-03-01",
-  "assets": {
-    "directory": "./app/static",
-    "binding": "ASSETS",
-    "run_worker_first": true
-  },
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "telegram-selfie-links",
-      "database_id": "00000000-0000-0000-0000-000000000000",
-      "migrations_dir": "migrations"
-    }
-  ],
-  "vars": {
-    "PUBLIC_BASE_URL": "https://SET-YOUR-WORKERS-DEV-URL"
-  },
-  "observability": {
-    "enabled": true
-  }
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "telegram-selfie-page",
+	"main": "worker.mjs",
+	"compatibility_date": "2025-03-01",
+	"assets": {
+		"directory": "./app/static",
+		"binding": "ASSETS",
+		"run_worker_first": true
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "telegram-selfie-links",
+			"database_id": "bb259004-f586-4cc3-a188-6eba58b7886d",
+			"migrations_dir": "migrations"
+		}
+	],
+	"vars": {
+		"PUBLIC_BASE_URL": "https://telegram-selfie-page.millo-lawa.workers.dev"
+	},
+	"observability": {
+		"enabled": true
+	}
 }
