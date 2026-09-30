@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f7f5f0">
+    <meta name="description" content="Pořiďte selfie a odešlete ho do našeho Telegramu.">
+    <title>Selfie do Telegramu</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <main class="page">
+      <section class="card" aria-labelledby="page-title">
+        <div class="eyebrow"><span class="live-dot" aria-hidden="true"></span> JEDEN MOMENT, JEDNA FOTKA</div>
+        <h1 id="page-title">Pošli nám své selfie</h1>
+        <p class="intro">
+          Tohle je stránka pro pořízení selfie a její odeslání do Telegramu.
+          Náhled si můžeš zkontrolovat a kameru kdykoliv vypnout.
+        </p>
+
+        <div class="notice" role="note">
+          <span class="notice-icon" aria-hidden="true">↗</span>
+          <p><strong>Než pořídíš fotku:</strong> stránka po kliknutí na <strong>Pořídit a odeslat selfie</strong> pořídí snímek a odešle ho do Telegram chatu provozovatele této stránky. Povolení kamery spustí pouze živý náhled; fotka se nepořídí ani neodešle automaticky.</p>
+        </div>
+
+        <div class="preview" id="preview">
+          <video id="camera" autoplay muted playsinline aria-label="Živý náhled přední kamery"></video>
+          <div class="preview-empty" id="preview-empty">
+            <span class="camera-icon" aria-hidden="true">◎</span>
+            <span>Náhled kamery se zobrazí tady</span>
+          </div>
+          <span class="preview-label" id="preview-label" hidden><span class="live-dot" aria-hidden="true"></span> ŽIVÝ NÁHLED</span>
+        </div>
+
+        <div class="actions">
+          <button class="button button-secondary" id="start-camera" type="button">Zapnout kameru</button>
+          <button class="button button-primary" id="send-photo" type="button" disabled>Pořídit a odeslat selfie</button>
+          <button class="button button-stop" id="stop-camera" type="button" hidden>Vypnout kameru</button>
+        </div>
+
+        <p class="status" id="status" role="status" aria-live="polite">
+          Pro živý náhled povol přístup ke kameře. Odeslání fotky spustíš až samostatným tlačítkem.
+        </p>
+        <p class="privacy">Fotka se neukládá na tento webový server. Odešle se do výše uvedeného Telegram chatu.</p>
+      </section>
+      <footer>Respektujeme tvé rozhodnutí — kameru můžeš kdykoliv vypnout.</footer>
+    </main>
+  </body>
+</html>

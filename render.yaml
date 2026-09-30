@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: telegram-selfie-page
+    runtime: python
+    plan: starter
+    buildCommand: python -m pip install -r requirements.txt
+    startCommand: python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1
+    healthCheckPath: /health
+    disk:
+      name: selfie-link-storage
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+      - key: ADMIN_TELEGRAM_USER_ID
+        sync: false
+      - key: BASE_URL
+        sync: false
+      - key: DATABASE_PATH
+        value: /var/data/links.sqlite3
