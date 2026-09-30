@@ -191,9 +191,13 @@ test("webhook setup is protected and registers the secret URL", async () => {
     },
   ), env);
   assert.equal(response.status, 200);
-  assert.match(calls[0].url, /\/setWebhook$/);
+  assert.equal(
+    calls[0].url,
+    "https://api.telegram.org/botoffline-test-token/setWebhook",
+  );
   assert.equal(calls[0].body.url, "https://selfie.example/telegram/webhook");
   assert.equal(calls[0].body.secret_token, BOT_CONFIG.TELEGRAM_WEBHOOK_SECRET);
+  assert.deepEqual(calls[0].body.allowed_updates, ["message"]);
 });
 
 test("photo relay accepts valid JPEG and never exposes Telegram errors", async () => {

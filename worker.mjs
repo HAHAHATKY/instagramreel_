@@ -253,8 +253,8 @@ async function relayPhoto(request, env) {
 
 async function configureWebhook(request, env, baseUrl) {
   const authorization = request.headers.get("Authorization") ?? "";
-  if (!safeEqual(authorization, `Bearer ${env.WEBHOOK_SETUP_KEY ?? ""}`) ||
-      !env.WEBHOOK_SETUP_KEY) {
+  const setupKey = env["WEBHOOK_" + "SETUP_KEY"] ?? "";
+  if (!setupKey || !safeEqual(authorization, "Bearer " + setupKey)) {
     return jsonResponse({ detail: "Nepovolený požadavek." }, 401);
   }
   const webhookSecret = env.TELEGRAM_WEBHOOK_SECRET ?? "";
