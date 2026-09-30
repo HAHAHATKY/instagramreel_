@@ -33,7 +33,7 @@ Nastavte tyto Worker secrets v Cloudflare Dashboard: **Workers & Pages → `tele
 
 - `TELEGRAM_BOT_TOKEN`: token od BotFather.
 - `TELEGRAM_CHAT_ID`: cílový chat pro fotografie. ID skupiny obvykle začíná minus.
-- `ADMIN_TELEGRAM_USER_ID`: vaše číselné Telegram user ID. Jen tento účet smí v soukromém chatu s botem vytvořit odkaz.
+- `ADMIN_TELEGRAM_USER_ID`: vaše číselné Telegram user ID. Jen tento účet smí v soukromém chatu s botem vytvořit odkaz. Zjistíte ho tak, že botovi pošlete `/whoami`; bot ID pošle přímo do soukromé konverzace a nikam ho neukládá. Příkaz funguje pouze v soukromé konverzaci a ID se nikam neukládá.
 - `TELEGRAM_WEBHOOK_SECRET`: náhodný řetězec pouze z písmen, číslic, `_` nebo `-`; Telegram ho posílá jako autentizační HTTP hlavičku.
 - `WEBHOOK_SETUP_KEY`: samostatný náhodný tajný klíč pro jednorázové přihlášení endpointu, který nastaví Telegram webhook.
 
@@ -41,7 +41,7 @@ Oba webhook klíče vytvořte lokálně například `node -e "console.log(requir
 
 ### 3. URL a nasazení
 
-V Cloudflare dashboardu nejprve povolte `workers.dev` subdoménu, pokud ji účet ještě nemá. V `wrangler.jsonc` změňte `PUBLIC_BASE_URL` na HTTPS URL Workeru, kterou chcete sdílet, například `https://telegram-selfie-page.<váš-workers-subdomain>.workers.dev`. Hodnota musí být samotný origin bez cesty. Název Workeru je `telegram-selfie-page`; vaši `workers.dev` subdoménu najdete v Cloudflare dashboardu v sekci Workers & Pages. Stejnou URL pak použijte pro všechny kroky:
+Worker je nasazený na `https://telegram-selfie-page.millo-lawa.workers.dev`; tato hodnota je nastavena v `wrangler.jsonc`. Pokud změníte doménu, aktualizujte `PUBLIC_BASE_URL` na HTTPS origin bez cesty. Pro další nasazení:
 
 ```powershell
 npm test

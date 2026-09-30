@@ -82,13 +82,18 @@ function parseBotCommand(update, adminUserId) {
     !message ||
     message.chat?.type !== "private" ||
     !Number.isSafeInteger(message.from?.id) ||
-    !/^\d+$/.test(String(adminUserId ?? "")) ||
-    String(message.from.id) !== String(adminUserId) ||
     typeof message.text !== "string"
   ) {
     return null;
   }
   const command = message.text.trim().split(/\s+/, 1)[0].split("@", 1)[0].toLowerCase();
+  if (command === "/whoami") return "whoami";
+  if (
+    !/^\d+$/.test(String(adminUserId ?? "")) ||
+    String(message.from.id) !== String(adminUserId)
+  ) {
+    return null;
+  }
   if (command === "/newlink" || command === "/start") return "newlink";
   return null;
 }
@@ -136,6 +141,14 @@ async function handleBotUpdate(update, env) {
   const updateId = update.update_id;
   if (!Number.isSafeInteger(updateId) || updateId < 0) return false;
   const chatId = String(update.message.chat.id);
+  if (command === "whoami") {
+    await sendBotMessage(
+      env.TELEGRAM_BOT_TOKEN,
+      chatId,
+      `Telegram user ID: ${update.message.from.id}`,
+    );
+    return true;
+  }
   const existing = await env.DB.prepare(
     "SELECT response_chat_id FROM processed_bot_updates WHERE update_id = ?",
   ).bind(updateId).first();

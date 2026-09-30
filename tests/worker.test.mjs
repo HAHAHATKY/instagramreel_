@@ -116,12 +116,32 @@ test("Wrangler config targets the provisioned free D1 and deployed Worker origin
 test("bot only accepts start/newlink from the configured admin in a private chat", () => {
   assert.equal(parseBotCommand(adminUpdate(), "12345"), "newlink");
   assert.equal(parseBotCommand(adminUpdate(7, "/start@selfiebot"), "12345"), "newlink");
+  assert.equal(parseBotCommand(adminUpdate(7, "/whoami"), undefined), "whoami");
   assert.equal(parseBotCommand(adminUpdate(), "98765"), null);
   assert.equal(parseBotCommand(adminUpdate(), undefined), null);
   const groupUpdate = adminUpdate();
   groupUpdate.message.chat.type = "group";
   assert.equal(parseBotCommand(groupUpdate, "12345"), null);
+  assert.equal(parseBotCommand(groupUpdate, undefined), null);
   assert.equal(parseBotCommand(adminUpdate(7, "/help"), "12345"), null);
+});
+
+test("/whoami replies privately without storing the sender ID", async () => {
+  const env = testEnv({ ADMIN_TELEGRAM_USER_ID: "" });
+  const sent = [];
+  mock.method(globalThis, "fetch", async (_url, init) => {
+    sent.push(JSON.parse(init.body));
+    return Response.json({ ok: true });
+  });
+
+  const handled = await handleBotUpdate(adminUpdate(17, "/whoami"), env);
+
+  assert.equal(handled, true);
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].chat_id, "12345");
+  assert.equal(sent[0].text, "Telegram user ID: 12345");
+  assert.equal(env.DB.updates.size, 0);
+  assert.equal(env.DB.links.size, 0);
 });
 
 test("link creation stores only the SHA-256 hash and resolution validates code", async () => {
