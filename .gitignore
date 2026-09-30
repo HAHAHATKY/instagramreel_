@@ -6,4 +6,8 @@ __pycache__/
 .env
 .env.*
 !.env.example
+.dev.vars*
 data/
+node_modules/
+.wrangler/
+dist/

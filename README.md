@@ -1,54 +1,97 @@
 # Selfie do Telegramu
 
-Samostatná česká webová aplikace pro živý náhled přední kamery a ruční pořízení a odeslání selfie do nakonfigurovaného Telegram chatu. Odkazy lze generovat příkazem Telegram bota `/newlink` (nebo `/start`); jejich cesta `/selfie/<náhodný-kód>` zůstává zřetelná a vede přímo na stránku pro selfie. Na stránce je ještě před povolením kamery uvedeno, že fotografie se odešle do Telegram chatu provozovatele.
+Samostatná česká webová aplikace pro živý náhled kamery a ruční odeslání selfie do nakonfigurovaného Telegram chatu provozovatele. Běží na Cloudflare Workers a D1, bez placeného serveru, persistentního disku, Python backendu nebo polling procesu. Bot přijímá pouze Telegram webhook.
 
-Kamera se zapíná až po kliknutí na **Zapnout kameru** a lze ji kdykoliv vypnout. Fotografie se pořídí a odešle výhradně po kliknutí na **Pořídit a odeslat selfie**. Server ji neukládá na disk. Neshromažďují se údaje o návštěvnících ani kliknutích na odkazy.
+Veřejné odkazy mají viditelnou cestu `/selfie/<náhodný-kód>` a vedou přímo na selfie stránku. Ještě před žádostí o přístup ke kameře stránka oznamuje, že po stisku **Pořídit a odeslat selfie** odešle fotografii do Telegram chatu provozovatele. Náhled je lokální, kamera se spustí jen po samostatném kliknutí a lze ji vypnout. Fotografie se neukládá. Není zde automatické focení ani sledování kliknutí.
 
-## Nasazení na Render
+## Nasazení zdarma na Cloudflare
 
-V repozitáři je Render Blueprint `render.yaml`. Vytvořte nový Blueprint z tohoto repozitáře. Konfigurace používá jeden webový proces a 1GB persistentní disk připojený do `/var/data`; persistentní disky vyžadují placený plán Renderu. Aplikaci neškálujte na více instancí: Telegram bot používá dlouhé polling spojení a má běžet jen jednou.
+Požadavky: Node.js 20+, účet Cloudflare a Telegram účet. Workers Free a D1 Free stačí pro tento projekt; nejsou vytvořeny placené prostředky. Kvóty Cloudflare se mohou měnit. Nasazení vyžaduje autorizaci Cloudflare CLI ve vašem prohlížeči, ale heslo ani token neposílejte do chatu.
 
-Vytvořte Telegram bota přes [@BotFather](https://t.me/BotFather) a jeho token vložte pouze do Render env var `TELEGRAM_BOT_TOKEN`. Do `TELEGRAM_CHAT_ID` vložte ID soukromého chatu nebo skupiny, kam se mají doručovat fotografie; přidejte do něj bota a ověřte, že může posílat zprávy. Pro skupinu bývá ID záporné.
+### 1. Instalace a připojení Cloudflare
 
-Nastavte také:
-
-- `ADMIN_TELEGRAM_USER_ID`: vaše kladné číselné Telegram user ID. Jen tento účet může botovi v soukromé konverzaci posílat `/start` a `/newlink`. Najdete ho například přes důvěryhodného Telegram ID bota.
-- `BASE_URL`: veřejný HTTPS origin aplikace, například `https://nazev-sluzby.onrender.com` (bez cesty za doménou). Na Renderu může zůstat prázdná; aplikace pak použije automatickou proměnnou `RENDER_EXTERNAL_URL`. Nastavte ji ručně jen při použití vlastní domény nebo pokud automatická adresa není vhodná.
-- `DATABASE_PATH`: Blueprint jej nastavuje na `/var/data/links.sqlite3`. Neměňte jej na dočasnou cestu mimo připojený disk, jinak se odkazy po restartu ztratí.
-
-Render zobrazí hodnoty `sync: false` jako proměnné, které je nutné doplnit: nastavte token, cílový chat a své admin user ID. Token nikomu neposílejte ani jej neukládejte do repozitáře. Po deployi otevřete soukromou konverzaci s botem a pošlete `/newlink`; bot odpoví přímým selfie odkazem a jasným upozorněním na odesílání fotografie. `/start` vytvoří nový odkaz také. Odkazy nemají sledování kliknutí ani automatické vypršení; platí, dokud existuje záznam na persistentním disku.
-
-Bot používá Telegram `getUpdates` polling. Pokud má tento bot nastavený webhook, před spuštěním polling aplikace ho odstraňte; Telegram neumožňuje současně používat webhook a `getUpdates`.
-
-Tato změna pouze přidává manifest a instrukce; aplikace nebyla nasazena.
-
-## Lokální spuštění
-
-Požadavky: Python 3.10 nebo novější. Kamera v prohlížeči funguje na `localhost` nebo přes HTTPS.
+V kořeni repozitáře:
 
 ```powershell
-py -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-Copy-Item .env.example .env
+npm.cmd install
+npx wrangler login
 ```
 
-Do `.env` vložte hodnoty `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `ADMIN_TELEGRAM_USER_ID` a `BASE_URL`. Pro lokální bot linky použijte `BASE_URL=http://localhost:8000`. Spusťte server příkazem:
+Příkaz otevře přihlášení Cloudflare ve vašem vlastním prohlížeči. Vytvořte D1 databázi:
 
 ```powershell
-python -m uvicorn app.main:app --env-file .env --host 127.0.0.1 --port 8000 --workers 1
+npx wrangler d1 create telegram-selfie-links --binding DB --update-config
 ```
 
-Otevřete <http://127.0.0.1:8000>. Lokální výchozí SQLite databáze je `data/links.sqlite3`; v produkci použijte persistentní úložiště a `DATABASE_PATH` nastavte na jeho cestu.
+Wrangler vytvoří databázi a zapíše skutečné `database_id` do `wrangler.jsonc` místo ukázkového nulového UUID. Zkontrolujte změnu konfigurace před migrací a deployem. Přihlášený Wrangler projekt a D1 databáze patří k vašemu účtu; databáze je v bezplatném plánu.
 
-## Soukromí a limity
+### 2. Telegram bot a bezpečné secrets
 
-Backend přijímá pouze JPEG a PNG do 5 MB a předává je Telegram Bot API. Fotografie se neukládají na webový server; Telegram ji doručí do nastaveného chatu. Živý náhled zůstává v prohlížeči. Každý vygenerovaný náhodný kód má 96 bitů entropie; v SQLite se ukládá pouze jeho SHA-256 otisk, nikoliv původní kód. Databáze uchovává záznamy odkazů a idempotentní stav příkazů bota na persistentním disku.
+V Telegramu vytvořte bota přes [@BotFather](https://t.me/BotFather). Přidejte ho do cílového soukromého chatu nebo skupiny, kam se mají doručovat fotografie, a ověřte, že může posílat zprávy. Tajný bot token neukládejte do souboru ani repozitáře.
 
-## Offline testy
-
-Testy nepovolují kameru ani nekontaktují Telegram; síťová odpověď bota je simulovaná.
+Nastavte tyto Worker secrets. Wrangler si každou hodnotu vyžádá interaktivně; token nevkládejte do příkazového řádku:
 
 ```powershell
-python -m unittest discover -s tests -v
+npx wrangler secret put TELEGRAM_BOT_TOKEN
+npx wrangler secret put TELEGRAM_CHAT_ID
+npx wrangler secret put ADMIN_TELEGRAM_USER_ID
+npx wrangler secret put TELEGRAM_WEBHOOK_SECRET
+npx wrangler secret put WEBHOOK_SETUP_KEY
 ```
+
+- `TELEGRAM_BOT_TOKEN`: token od BotFather.
+- `TELEGRAM_CHAT_ID`: cílový chat pro fotografie. ID skupiny obvykle začíná minus.
+- `ADMIN_TELEGRAM_USER_ID`: vaše číselné Telegram user ID. Jen tento účet smí v soukromém chatu s botem vytvořit odkaz.
+- `TELEGRAM_WEBHOOK_SECRET`: náhodný řetězec pouze z písmen, číslic, `_` nebo `-`; Telegram ho posílá jako autentizační HTTP hlavičku.
+- `WEBHOOK_SETUP_KEY`: samostatný náhodný tajný klíč pro jednorázové přihlášení endpointu, který nastaví Telegram webhook.
+
+Oba webhook klíče vytvořte lokálně například `node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))"` a vložte je přímo do výzvy Wrangleru. Nepoužívejte jeden token jako oba klíče.
+
+### 3. URL a nasazení
+
+V Cloudflare dashboardu nejprve povolte `workers.dev` subdoménu, pokud ji účet ještě nemá. V `wrangler.jsonc` změňte `PUBLIC_BASE_URL` na HTTPS URL Workeru, kterou chcete sdílet, například `https://telegram-selfie-page.<váš-workers-subdomain>.workers.dev`. Hodnota musí být samotný origin bez cesty. Název Workeru je `telegram-selfie-page`; vaši `workers.dev` subdoménu najdete v Cloudflare dashboardu v sekci Workers & Pages. Stejnou URL pak použijte pro všechny kroky:
+
+```powershell
+npm test
+npx wrangler d1 migrations apply telegram-selfie-links --remote
+npx wrangler deploy
+```
+
+Názvy aplikace a databáze jsou v `wrangler.jsonc`; `wrangler deploy` nasadí Worker i statické soubory.
+
+### 4. Nastavení webhooku
+
+Po nasazení nastavte Telegram webhook jednorázově přes zabezpečený endpoint. Následující PowerShell příkaz skryje klíč při zadávání a vynuluje jeho paměťovou kopii po použití:
+
+```powershell
+$secure = Read-Host "WEBHOOK_SETUP_KEY" -AsSecureString
+$ptr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
+try {
+  $key = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr)
+  Invoke-RestMethod -Method Post `
+    -Uri "https://telegram-selfie-page.<váš-workers-subdomain>.workers.dev/api/admin/configure-webhook" `
+    -Headers @{ Authorization = "Bearer $key" }
+} finally {
+  [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr)
+  Remove-Variable key, secure, ptr -ErrorAction SilentlyContinue
+}
+```
+
+Endpoint použije `TELEGRAM_WEBHOOK_SECRET` z Worker secrets při volání Telegram `setWebhook`. Služba neprovádí long polling a nepoužívá token v klientském JavaScriptu. Pro další nové odkazy napište botovi v soukromém chatu `/newlink` nebo `/start`; obojí vytvoří nový veřejný odkaz. Ostatní účty ani skupinové konverzace příkazy neobslouží.
+
+## D1 a soukromí
+
+`migrations/0001_create_tables.sql` vytvoří tabulku odkazů a idempotentní tabulku Telegram update ID. Kód odkazu obsahuje 96 bitů odvozených HMAC-SHA-256 z tajného bot tokenu a update ID, proto opakovaný webhook pro stejný Telegram příkaz vrátí tentýž odkaz. D1 ukládá pouze SHA-256 otisk kódu, datum vytvoření a Telegram update ID s chat ID nutné pro opakované zpracování; nikdy fotografie. Odkazy neexpirují a není implementováno měření kliknutí.
+
+Backend přijímá pouze JPEG a PNG do 5 MB, kontroluje typ a signaturu a přeposílá fotku přes Telegram Bot API. Návštěvník je před povolením kamery informován o cíli odeslání. Fotografie jde přímo k Telegramu a není trvale uložena ve Workeru ani D1.
+
+## Lokální vývoj a testy
+
+```powershell
+npm.cmd install
+npx wrangler d1 migrations apply telegram-selfie-links --local
+npm test
+npm run dev
+```
+
+Testy běží offline na Node.js built-in test runneru; Telegram volání jsou simulována a nevyžadují kameru, Cloudflare účet ani tajné hodnoty. Pro lokální plnohodnotný test webhooku lze nastavit secrets přes Wrangler lokální secrets mechanismus nebo `.dev.vars` (nikdy tento soubor necommitujte).
