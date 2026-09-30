@@ -29,15 +29,7 @@ Wrangler vytvoří databázi a zapíše skutečné `database_id` do `wrangler.js
 
 V Telegramu vytvořte bota přes [@BotFather](https://t.me/BotFather). Přidejte ho do cílového soukromého chatu nebo skupiny, kam se mají doručovat fotografie, a ověřte, že může posílat zprávy. Tajný bot token neukládejte do souboru ani repozitáře.
 
-Nastavte tyto Worker secrets. Wrangler si každou hodnotu vyžádá interaktivně; token nevkládejte do příkazového řádku:
-
-```powershell
-npx wrangler secret put TELEGRAM_BOT_TOKEN
-npx wrangler secret put TELEGRAM_CHAT_ID
-npx wrangler secret put ADMIN_TELEGRAM_USER_ID
-npx wrangler secret put TELEGRAM_WEBHOOK_SECRET
-npx wrangler secret put WEBHOOK_SETUP_KEY
-```
+Nastavte tyto Worker secrets v Cloudflare Dashboard: **Workers & Pages → `telegram-selfie-page` → Settings → Variables and Secrets → Add**. U každé hodnoty zvolte typ **Secret** (encrypted); token nevkládejte do `wrangler.jsonc`, GitHubu ani chatu:
 
 - `TELEGRAM_BOT_TOKEN`: token od BotFather.
 - `TELEGRAM_CHAT_ID`: cílový chat pro fotografie. ID skupiny obvykle začíná minus.
@@ -45,7 +37,7 @@ npx wrangler secret put WEBHOOK_SETUP_KEY
 - `TELEGRAM_WEBHOOK_SECRET`: náhodný řetězec pouze z písmen, číslic, `_` nebo `-`; Telegram ho posílá jako autentizační HTTP hlavičku.
 - `WEBHOOK_SETUP_KEY`: samostatný náhodný tajný klíč pro jednorázové přihlášení endpointu, který nastaví Telegram webhook.
 
-Oba webhook klíče vytvořte lokálně například `node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))"` a vložte je přímo do výzvy Wrangleru. Nepoužívejte jeden token jako oba klíče.
+Oba webhook klíče vytvořte lokálně například `node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))"` a vložte je přímo do dashboardu. Nepoužívejte jeden token jako oba klíče. Změna Secrets může vyžadovat nové nasazení; dokončete ho podle pokynů v Dashboardu.
 
 ### 3. URL a nasazení
 
@@ -61,7 +53,7 @@ Názvy aplikace a databáze jsou v `wrangler.jsonc`; `wrangler deploy` nasadí W
 
 ### 4. Nastavení webhooku
 
-Po nasazení nastavte Telegram webhook jednorázově přes zabezpečený endpoint. Následující PowerShell příkaz skryje klíč při zadávání a vynuluje jeho paměťovou kopii po použití:
+Po nasazení a uložení všech Worker secrets nastavte Telegram webhook jednorázově přes zabezpečený endpoint. Následující PowerShell příkaz skryje klíč při zadávání a vynuluje jeho paměťovou kopii po použití:
 
 ```powershell
 $secure = Read-Host "WEBHOOK_SETUP_KEY" -AsSecureString
